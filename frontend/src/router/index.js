@@ -24,6 +24,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/problems',
+    name: 'Problems',
+    component: () => import('../views/Problems.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/submissions',
     name: 'Submission',
     component: () => import('../views/Submission.vue'),
@@ -34,7 +40,14 @@ const routes = [
     name: 'SubmissionDetail',
     component: () => import('../views/SubmissionDetail.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+      path: '/problem/:id',
+      name: 'ProblemDetail',
+      component: () => import('../views/ProblemDetail.vue'),
+      meta: { requiresAuth: true }
   }
+
 ]
 
 const router = createRouter({

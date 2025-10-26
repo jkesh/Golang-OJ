@@ -1,8 +1,8 @@
 package api
 
 import (
+	"backend/middleware"
 	"github.com/gin-gonic/gin"
-	"github.com/jkesh/ojplus/middleware"
 )
 
 // RegisterRoutes 注册所有API路由
@@ -19,28 +19,28 @@ func RegisterRoutes(router *gin.Engine) {
 	authRequired.Use(middleware.JWT())
 	{
 		// 用户相关
-		authRequired.GET("/user/me", GetCurrentUser)
+		authRequired.GET("/user/:id", GetCurrentUser)
 		authRequired.PUT("/user/me", UpdateCurrentUser)
 
 		// 问题相关
 		authRequired.GET("/problems", GetProblems)
 		authRequired.GET("/problems/:id", GetProblem)
+		authRequired.POST("/problems", CreateProblem)
+		authRequired.PUT("/problems/:id", UpdateProblem)
+		authRequired.DELETE("/problems/:id", DeleteProblem)
+		authRequired.POST("/problems/:id/testcases", addTestCase)
 
 		// 提交相关
-		authRequired.POST("/submissions", SubmitCode)
+		authRequired.POST("/submit", SubmitHandler)
 		authRequired.GET("/submissions", GetSubmissions)
 		authRequired.GET("/submissions/:id", GetSubmission)
+		authRequired.GET("/submissions/:id/result", GetSubmissionResult)
 		authRequired.GET("/:id/submit-state", GetUserSubmitState)
 
 		// 管理员路由
 		adminRequired := authRequired.Group("/admin")
 		adminRequired.Use(middleware.AdminRequired())
 		{
-			// 问题管理
-			adminRequired.POST("/problems", CreateProblem)
-			adminRequired.PUT("/problems/:id", UpdateProblem)
-			adminRequired.DELETE("/problems/:id", DeleteProblem)
-
 			// 用户管理
 			adminRequired.GET("/users", GetUsers)
 			adminRequired.GET("/users/:id", GetUser)

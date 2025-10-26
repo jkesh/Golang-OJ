@@ -3,20 +3,21 @@ package api
 import (
 	"net/http"
 
+	"backend/models"
 	"github.com/gin-gonic/gin"
-	"github.com/jkesh/ojplus/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 // GetCurrentUser 获取当前登录用户信息
 func GetCurrentUser(c *gin.Context) {
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未找到用户信息"})
+	userID := c.Param("id")
+	db := c.MustGet("db").(*gorm.DB)
+	var user models.User
+	if err := db.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"user": user,
 	})
@@ -199,12 +200,12 @@ func DeleteUser(c *gin.Context) {
 func GetUserSubmitState(c *gin.Context) {
 	userID := c.Param("id")
 	db := c.MustGet("db").(*gorm.DB)
-	var submitState models.SubmitState
-	if err := db.First(&submitState, userID).Error; err != nil {
+	var submission []models.Submission
+	if err := db.Where("user_id = ?", userID).Order("id").Find(&submission).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "用户提交状态不存在"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"submit_state": submitState,
+		"submit_state": submission,
 	})
 }

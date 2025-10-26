@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
+	"backend/config"
 	"github.com/go-redis/redis/v8"
-	"github.com/jkesh/ojplus/config"
 )
 
 var (
