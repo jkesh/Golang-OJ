@@ -1,14 +1,54 @@
 package api
 
 import (
+	"net/http"
+	"strconv"
+
+	"backend/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-// GetSubmissions 获取所有提交列表
+// GetSubmissions 获取所有提交列表 (带分页)
 func GetSubmissions(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "获取所有提交列表",
-		"status": "success",
+	// 获取分页参数
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+
+	// 确保参数有效
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	db := c.MustGet("db").(*gorm.DB)
+
+	var submissions []models.Submission
+	var total int64
+
+	// 获取总数
+	db.Model(&models.Submission{}).Count(&total)
+
+	// 分页查询
+	offset := (page - 1) * pageSize
+	result := db.Offset(offset).Limit(pageSize).Find(&submissions)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch submissions",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"submissions": submissions,
+		"total":       total,
+		"page":        page,
+		"page_size":   pageSize,
+		"message":     "获取所有提交列表",
+		"status":      "success",
 	})
 }
 
@@ -17,16 +57,8 @@ func GetSubmission(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(200, gin.H{
 		"message": "获取提交详情",
-		"id": id,
-		"status": "success",
-	})
-}
-
-// SubmitCode 提交代码
-func SubmitCode(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "提交代码",
-		"status": "success",
+		"id":      id,
+		"status":  "success",
 	})
 }
 
@@ -35,8 +67,8 @@ func GetSubmissionResult(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(200, gin.H{
 		"message": "获取提交结果",
-		"id": id,
-		"status": "success",
+		"id":      id,
+		"status":  "success",
 	})
 }
 
@@ -46,7 +78,6 @@ func RegisterSubmissionRoutes(rg *gin.RouterGroup) {
 	{
 		submissions.GET("", GetSubmissions)
 		submissions.GET("/:id", GetSubmission)
-		submissions.POST("", SubmitCode)
 		submissions.GET("/:id/result", GetSubmissionResult)
 	}
 }

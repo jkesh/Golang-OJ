@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	"backend/auth"
+	"backend/models"
 	"github.com/gin-gonic/gin"
-	"github.com/jkesh/ojplus/auth"
-	"github.com/jkesh/ojplus/models"
 	"gorm.io/gorm"
 )
 

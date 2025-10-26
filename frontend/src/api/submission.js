@@ -37,9 +37,9 @@ apiClient.interceptors.response.use(
   }
 )
 const submissionApi = {
-  // 获取所有提交记录
-  getSubmissions() {
-    return apiClient.get(`${localStorage.getItem('id')}/submit-state`).then(response => response.data)
+  // 获取所有提交记录 (带分页)
+  getSubmissions(page = 1, pageSize = 10) {
+    return apiClient.get(`/submissions?page=${page}&page_size=${pageSize}`).then(response => response.data)
   },
   
   // 获取单个提交详情

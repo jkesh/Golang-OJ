@@ -1,35 +1,10 @@
 <template>
   <div class="dashboard-container">
     <el-container>
-      <el-aside width="200px">
-        <el-menu
-          default-active="1"
-          class="sidebar-menu"
-          background-color="#304156"
-          text-color="#bfcbd9"
-          active-text-color="#409EFF"
-          router>
-          <el-menu-item index="1" route="/dashboard">
-            <i class="el-icon-menu"></i>
-            <span>首页</span>
-          </el-menu-item>
-          <el-menu-item index="2" route="/problems">
-            <i class="el-icon-document"></i>
-            <span>题目列表</span>
-          </el-menu-item>
-          <el-menu-item index="3" route="/submissions">
-            <i class="el-icon-s-order"></i>
-            <span>提交记录</span>
-          </el-menu-item>
-          <el-menu-item index="4" route="/ranking">
-            <i class="el-icon-trophy"></i>
-            <span>排行榜</span>
-          </el-menu-item>
-        </el-menu>
-      </el-aside>
+      <Sidebar @menu-selected="onMenuSelect" />
       
       <el-container>
-        <el-header>
+        <el-header class="el-header">
           <div class="header-container">
             <div class="header-title">OJPlus 在线评测系统</div>
             <div class="header-right">
@@ -49,7 +24,7 @@
           </div>
         </el-header>
         
-        <el-main>
+        <el-main class="el-main">
           <el-card>
             <template #header>
               <div class="card-header">
@@ -103,9 +78,11 @@ import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import Sidebar from "../../components/Sidebar.vue";
 
 export default {
   name: 'Dashboard',
+  components: {Sidebar},
   setup() {
     const store = useStore()
     const router = useRouter()
@@ -114,7 +91,6 @@ export default {
       const user = store.getters.currentUser
       return user ? user.username : '用户'
     })
-    
     const activities = ref([
       {
         content: '成功解决题目 #42 "两数之和"',
@@ -132,17 +108,16 @@ export default {
         type: 'primary'
       }
     ])
-    
     const handleCommand = (command) => {
       if (command === 'logout') {
         ElMessageBox.confirm(
-          '确定要退出登录吗?',
-          '提示',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }
+            '确定要退出登录吗?',
+            '提示',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }
         ).then(() => {
           store.dispatch('logout')
           router.push('/login')
@@ -159,19 +134,35 @@ export default {
         ElMessage('设置功能开发中')
       }
     }
+
+    // 处理菜单选择事件(可选)
+    const onMenuSelect = (index) => {
+      console.log(`Selected menu item with index: ${index}`)
+    }
     
     return {
       username,
       activities,
-      handleCommand
+      handleCommand,
+      onMenuSelect
     }
   }
 }
 </script>
 
 <style scoped>
+
 .dashboard-container {
-  height: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1px;
 }
 
 .el-header {
@@ -179,12 +170,7 @@ export default {
   color: #333;
   line-height: 60px;
   border-bottom: 1px solid #e6e6e6;
-}
-
-.header-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1); /* 添加这行 */
 }
 
 .header-title {
@@ -204,18 +190,9 @@ export default {
   align-items: center;
 }
 
-.el-aside {
-  background-color: #304156;
-  color: #bfcbd9;
-}
-
-.sidebar-menu {
-  height: 100%;
-  border-right: none;
-}
-
 .el-main {
-  background-color: #f0f2f5;
+  flex: 1;
+  overflow-y: auto;
   padding: 20px;
 }
 

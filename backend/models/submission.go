@@ -2,12 +2,13 @@ package models
 
 import (
 	"time"
-	
+
 	"gorm.io/gorm"
 )
 
 // Submission 代码提交实体模型
 type Submission struct {
+	ID uint `json:"id" gorm:"primaryKey;autoIncrement:true"`
 	gorm.Model
 	ProblemID    uint      `json:"problem_id" gorm:"not null"`
 	UserID       uint      `json:"user_id" gorm:"not null"`

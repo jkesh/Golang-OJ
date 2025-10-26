@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
+	"backend/auth"
+	"backend/models"
 	"github.com/gin-gonic/gin"
-	"github.com/jkesh/ojplus/auth"
-	"github.com/jkesh/ojplus/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )

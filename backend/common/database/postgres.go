@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/jkesh/ojplus/config"
+	"backend/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
