@@ -35,7 +35,7 @@
                 <div class="problem-header">
                   <h2>{{ problem.title }}</h2>
                   <el-tag :type="getDifficultyType(problem.difficulty)">
-                    {{ problem.difficulty }}
+                    {{ getDifficultyText(problem.difficulty) }}
                   </el-tag>
                 </div>
               </template>
@@ -72,6 +72,19 @@
                 
                 <el-divider></el-divider>
 
+                <div class="section" v-if="problem.tags">
+                  <h3>标签</h3>
+                  <div class="tags">
+                    <el-tag 
+                      v-for="(tag, index) in problem.tags.split(',')" 
+                      :key="index" 
+                      class="tag-item"
+                      size="small"
+                    >
+                      {{ tag.trim() }}
+                    </el-tag>
+                  </div>
+                </div>
               </div>
             </el-card>
             
@@ -113,12 +126,12 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Sidebar from "../../components/Sidebar.vue"
-import problemsApi from "../api/problems";
+import problemsApi from "../../src/api/problems.js"
 
 export default {
   name: 'ProblemDetail',
@@ -128,15 +141,7 @@ export default {
     const route = useRoute()
     const router = useRouter()
     
-    const problem = ref({
-      id: '',
-      title: '',
-      description: '',
-      difficulty: 'medium',
-      time_limit: 1000,
-      memory_limit: 256,
-      tags: ''
-    })
+    const problem = ref({})
     
     const loading = ref(true)
     const code = ref('')
@@ -159,25 +164,46 @@ export default {
     const fetchProblem = async () => {
       loading.value = true
       try {
-        const response = await problemsApi.getProblem(route.params.id)
-        problem.value = response.problem
-        setTimeout(() => {
-          problem.value = {
-            id: route.params.id,
-            title: problem.value.title,
-            description: problem.value.description,
-            difficulty: problem.value.difficulty,
-            time_limit: problem.value.time_limit,
-            memory_limit: problem.value.memory_limit,
-          }
-          loading.value = false
-        }, 500)
+        // 检查路由参数是否有效
+        if (!route.params.id) {
+          throw new Error('题目ID参数缺失')
+        }
+        
+        // 检查路由参数是否为有效数字
+        const problemId = parseInt(route.params.id)
+        if (isNaN(problemId) || problemId <= 0) {
+          throw new Error(`题目ID参数无效: ${route.params.id}`)
+        }
+        
+        const response = await problemsApi.getProblem(problemId)
+        if (!response || !response.problem) {
+          throw new Error('无效的响应数据')
+        }
+        
+        problem.value = {
+          id: response.problem.ID,
+          title: response.problem.title,
+          description: response.problem.description,
+          difficulty: response.problem.difficulty,
+          time_limit: response.problem.time_limit,
+          memory_limit: response.problem.memory_limit,
+          tags: response.problem.tags || ''
+        }
       } catch (error) {
         console.error('获取题目详情失败:', error)
-        ElMessage.error('获取题目详情失败')
+        ElMessage.error('获取题目详情失败: ' + (error.response?.data?.error || error.message))
+        problem.value = {}
+      } finally {
         loading.value = false
       }
     }
+    
+    // 监听路由变化
+    watch(() => route.params.id, (newId, oldId) => {
+      if (newId !== oldId) {
+        fetchProblem()
+      }
+    })
     
     // 获取难度类型
     const getDifficultyType = (difficulty) => {
@@ -189,15 +215,43 @@ export default {
       return typeMap[difficulty] || 'info'
     }
     
+    // 获取难度文本
+    const getDifficultyText = (difficulty) => {
+      const textMap = {
+        'Easy': '简单',
+        'Medium': '中等',
+        'Hard': '困难'
+      }
+      return textMap[difficulty] || difficulty
+    }
+    
     // 提交代码
-    const submitCode = () => {
+    const submitCode = async () => {
       if (!code.value.trim()) {
         ElMessage.warning('请输入代码')
         return
       }
       
-      ElMessage.success('代码提交成功，正在评测中...')
-      // 实际开发中应该调用提交代码的API接口
+      try {
+        const submissionData = {
+          problem_id: problem.value.id,
+          language: selectedLanguage.value,
+          code: code.value
+        }
+
+        // 调用提交代码的API接口
+        const response = await problemsApi.submitCode(submissionData)
+
+        if (response.status === 'success') {
+          ElMessage.success('代码提交成功，正在评测中...')
+          await router.push(`/submission/${response.id}`)
+        } else {
+          ElMessage.error(response.message || '代码提交失败')
+        }
+      } catch (error) {
+        console.error('提交代码时出错:', error)
+        ElMessage.error('提交代码时发生错误，请稍后重试')
+      }
     }
     
     const handleCommand = (command) => {
@@ -241,6 +295,7 @@ export default {
       languages,
       username,
       getDifficultyType,
+      getDifficultyText,
       submitCode,
       handleCommand,
       onMenuSelect
@@ -329,11 +384,11 @@ export default {
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 5px;
 }
 
 .tag-item {
-  margin-right: 10px;
+  margin-right: 5px;
 }
 
 .code-card {

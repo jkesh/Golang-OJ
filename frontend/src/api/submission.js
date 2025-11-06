@@ -36,6 +36,7 @@ apiClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
 const submissionApi = {
   // 获取所有提交记录 (带分页)
   getSubmissions(page = 1, pageSize = 10) {
@@ -54,7 +55,7 @@ const submissionApi = {
   
   // 获取提交结果
   getSubmissionResult(id) {
-    return apiClient.get(`/submissions/${id}`).then(response => response.data)
+    return apiClient.get(`/submissions/${id}/result`).then(response => response.data)
   }
 }
 

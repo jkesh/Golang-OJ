@@ -40,10 +40,10 @@
             <el-card class="detail-card">
               <el-descriptions title="基本信息" :column="2" border>
                 <el-descriptions-item label="提交ID">{{ submission.id }}</el-descriptions-item>
-                <el-descriptions-item label="提交时间">{{ submission.created_at }}</el-descriptions-item>
+                <el-descriptions-item label="提交时间">{{ formatDate(submission.created_at) }}</el-descriptions-item>
                 <el-descriptions-item label="题目">
                   <router-link :to="`/problem/${submission.problem_id}`" class="problem-link">
-                    {{ submission.problem ? submission.problem.title : `题目 #${submission.problem_id}` }}
+                    {{ `题目 #${submission.problem_id}` }}
                   </router-link>
                 </el-descriptions-item>
                 <el-descriptions-item label="状态">
@@ -52,9 +52,9 @@
                   </el-tag>
                 </el-descriptions-item>
                 <el-descriptions-item label="语言">{{ submission.language }}</el-descriptions-item>
-                <el-descriptions-item label="用户">{{ submission.username }}</el-descriptions-item>
-                <el-descriptions-item label="耗时">{{ submission.time_cost }} ms</el-descriptions-item>
-                <el-descriptions-item label="内存">{{ submission.memory_cost }} KB</el-descriptions-item>
+                <el-descriptions-item label="耗时">{{ submission.run_time }} ms</el-descriptions-item>
+                <el-descriptions-item label="内存">{{ submission.memory }} KB</el-descriptions-item>
+                <el-descriptions-item label="评测时间">{{ formatDate(submission.judged_at) }}</el-descriptions-item>
               </el-descriptions>
             </el-card>
             
@@ -65,31 +65,52 @@
               <pre class="code-block"><code>{{ submission.code }}</code></pre>
             </el-card>
             
-            <el-card v-if="submission.result" class="detail-card">
+            <el-card v-if="submission.status !== 'pending' && submission.status !== 'judging'" class="detail-card">
               <div class="card-header">
                 <h3>测试结果</h3>
               </div>
-              <el-table :data="submission.result.test_cases || []" border stripe style="width: 100%">
-                <el-table-column prop="test_case" label="测试点" width="100" />
-                <el-table-column prop="status" label="状态" width="120">
+              <el-table :data="testCases" border stripe style="width: 100%">
+                <el-table-column prop="test_case_id" label="测试点" width="80" />
+                <el-table-column label="状态" width="100">
                   <template #default="scope">
-                    <el-tag :type="getStatusType(scope.row.status)">
-                      {{ getStatusText(scope.row.status) }}
+                    <el-tag :type="getTestCaseStatusType(scope.row.status)" size="small">
+                      {{ getTestCaseStatusText(scope.row.status) }}
                     </el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column prop="time_cost" label="耗时" width="100">
+                <el-table-column label="耗时" width="100">
                   <template #default="scope">
-                    {{ scope.row.time_cost }} ms
+                    {{ scope.row.run_time }} ms
                   </template>
                 </el-table-column>
-                <el-table-column prop="memory_cost" label="内存" width="100">
+                <el-table-column label="内存" width="100">
                   <template #default="scope">
-                    {{ scope.row.memory_cost }} KB
+                    {{ scope.row.memory }} KB
                   </template>
                 </el-table-column>
-                <el-table-column prop="error_message" label="错误信息" min-width="200" />
+                <el-table-column label="输入" min-width="120">
+                  <template #default="scope">
+                    <div class="text-content">{{ scope.row.input }}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="期望输出" min-width="120">
+                  <template #default="scope">
+                    <div class="text-content">{{ scope.row.expected_output }}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="用户输出" min-width="120">
+                  <template #default="scope">
+                    <div class="text-content">{{ scope.row.user_output || '-' }}</div>
+                  </template>
+                </el-table-column>
               </el-table>
+            </el-card>
+            
+            <el-card v-if="submission.error_message" class="detail-card">
+              <div class="card-header">
+                <h3>错误信息</h3>
+              </div>
+              <pre class="error-block"><code>{{ submission.error_message }}</code></pre>
             </el-card>
           </template>
         </el-main>
@@ -114,6 +135,7 @@ export default {
     const router = useRouter()
     const route = useRoute()
     const submission = ref({})
+    const testCases = ref([])
     const loading = ref(true)
     
     const username = computed(() => {
@@ -121,16 +143,17 @@ export default {
       return user ? user.username : '用户'
     })
     
+    // 处理用户命令
     const handleCommand = (command) => {
       if (command === 'logout') {
         ElMessageBox.confirm(
-            '确定要退出登录吗?',
-            '提示',
-            {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }
+          '确定要退出登录吗?',
+          '提示',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
         ).then(() => {
           store.dispatch('logout')
           router.push('/login')
@@ -140,10 +163,73 @@ export default {
           })
         }).catch(() => {})
       } else if (command === 'profile') {
+        // 跳转到个人信息页面
         ElMessage('个人信息功能开发中')
       } else if (command === 'settings') {
+        // 跳转到设置页面
         ElMessage('设置功能开发中')
       }
+    }
+    
+    // 格式化日期
+    const formatDate = (dateString) => {
+      if (!dateString) return '-'
+      const date = new Date(dateString)
+      return date.toLocaleString('zh-CN')
+    }
+    
+    // 获取提交状态类型
+    const getStatusType = (status) => {
+      const statusMap = {
+        'Accepted': 'success',
+        'WrongAnswer': 'danger',
+        'TimeLimitExceeded': 'danger',
+        'MemoryLimitExceeded': 'danger',
+        'RuntimeError': 'danger',
+        'CompileError': 'danger',
+        'Pending': 'info',
+        'Judging': 'info'
+      }
+      return statusMap[status] || 'info'
+    }
+    
+    // 获取测试用例状态类型
+    const getTestCaseStatusType = (status) => {
+      const statusMap = {
+        'passed': 'success',
+        'failed': 'danger',
+        'time_limit_exceeded': 'warning',
+        'memory_limit_exceeded': 'warning',
+        'runtime_error': 'danger'
+      }
+      return statusMap[status] || 'info'
+    }
+    
+    // 获取提交状态文本
+    const getStatusText = (status) => {
+      const statusTextMap = {
+        'accepted': '通过',
+        'wrong_answer': '答案错误',
+        'time_limit_exceeded': '超时',
+        'memory_limit_exceeded': '内存超限',
+        'runtime_error': '运行错误',
+        'compilation_error': '编译错误',
+        'pending': '等待中',
+        'judging': '评测中'
+      }
+      return statusTextMap[status] || status
+    }
+    
+    // 获取测试用例状态文本
+    const getTestCaseStatusText = (status) => {
+      const statusTextMap = {
+        'passed': '通过',
+        'failed': '失败',
+        'time_limit_exceeded': '超时',
+        'memory_limit_exceeded': '内存超限',
+        'runtime_error': '运行错误'
+      }
+      return statusTextMap[status] || status
     }
     
     // 获取提交详情
@@ -152,15 +238,17 @@ export default {
       loading.value = true
       
       try {
+        // 获取提交详情
         const response = await submissionApi.getSubmission(submissionId)
-        submission.value = response.data || {}
+        submission.value = response.submission || {}
         
-        // 获取提交结果
+        // 获取提交结果（包括测试用例）
         try {
           const resultResponse = await submissionApi.getSubmissionResult(submissionId)
-          submission.value.result = resultResponse.data || {}
+          const resultData = resultResponse.data || {}
+          testCases.value = resultData.test_cases || []
         } catch (error) {
-          console.error('获取提交结果失败:', error)
+          console.error('获取测试用例结果失败:', error)
         }
       } catch (error) {
         console.error('获取提交详情失败:', error)
@@ -170,46 +258,20 @@ export default {
       }
     }
     
-    // 获取状态类型
-    const getStatusType = (status) => {
-      const statusMap = {
-        'Accepted': 'success',
-        'Wrong Answer': 'danger',
-        'Time Limit Exceeded': 'warning',
-        'Memory Limit Exceeded': 'warning',
-        'Runtime Error': 'danger',
-        'Compilation Error': 'info',
-        'Pending': 'info',
-        'Judging': 'info'
-      }
-      return statusMap[status] || 'info'
-    }
-    
-    // 获取状态文本
-    const getStatusText = (status) => {
-      const statusTextMap = {
-        'Accepted': '通过',
-        'Wrong Answer': '答案错误',
-        'Time Limit Exceeded': '超时',
-        'Memory Limit Exceeded': '内存超限',
-        'Runtime Error': '运行错误',
-        'Compilation Error': '编译错误',
-        'Pending': '等待中',
-        'Judging': '评测中'
-      }
-      return statusTextMap[status] || status
-    }
-    
     onMounted(() => {
       fetchSubmissionDetail()
     })
     
     return {
       submission,
+      testCases,
       loading,
       username,
+      formatDate,
       getStatusType,
+      getTestCaseStatusType,
       getStatusText,
+      getTestCaseStatusText,
       handleCommand
     }
   }
@@ -276,11 +338,23 @@ export default {
   margin-bottom: 15px;
 }
 
-.code-block {
+.code-block, .error-block {
   background-color: #f5f7fa;
   padding: 15px;
   border-radius: 4px;
   overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.text-content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 100px;
+  overflow-y: auto;
 }
 
 .problem-link {

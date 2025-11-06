@@ -6,11 +6,11 @@
     "write_timeout": 60
   },
   "database": {
-    "host": "111.228.56.17",
+    "host": "43.131.41.101",
     "port": 5432,
-    "user": "postgres",
+    "user": "root",
     "password": "jkesh1024",
-    "dbname": "ojplus",
+    "dbname": "postgres",
     "sslmode": "disable"
   },
   "redis": {
@@ -20,8 +20,9 @@
     "db": 0
   },
   "kafka": {
-    "brokers": ["111.228.56.17:9092"],
-    "topic": "judge-tasks"
+    "brokers": ["43.131.41.101:9092"],
+    "topic": "judge-tasks",
+    "result_topic": "judge_results"
   },
   "judge": {
     "timeout": 10000,

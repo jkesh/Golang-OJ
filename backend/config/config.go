@@ -44,8 +44,9 @@ type RedisConfig struct {
 
 // KafkaConfig Kafka配置
 type KafkaConfig struct {
-	Brokers []string `json:"brokers"`
-	Topic   string   `json:"topic"`
+	Brokers     []string `json:"brokers"`
+	Topic       string   `json:"topic"`
+	ResultTopic string   `json:"result_topic"`
 }
 
 // JudgeConfig 判题配置
@@ -108,7 +109,7 @@ func getDefaultConfig() *Config {
 			WriteTimeout: 60,
 		},
 		Database: DatabaseConfig{
-			Host:     "111.228.56.17",
+			Host:     "43.131.41.101",
 			Port:     5432,
 			User:     "postgres",
 			Password: "jkesh1024",
@@ -122,8 +123,9 @@ func getDefaultConfig() *Config {
 			DB:       0,
 		},
 		Kafka: KafkaConfig{
-			Brokers: []string{"localhost:9092"},
-			Topic:   "judge-tasks",
+			Brokers:     []string{"localhost:9092"},
+			Topic:       "judge-tasks",
+			ResultTopic: "judge-results",
 		},
 		Judge: JudgeConfig{
 			Timeout:      10000,

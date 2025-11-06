@@ -33,7 +33,7 @@
             <div v-if="loading" class="loading-container">
               <el-skeleton :rows="10" animated />
             </div>
-            
+
             <div v-else-if="problems.length === 0" class="empty-container">
               <el-empty description="暂无题目" />
             </div>

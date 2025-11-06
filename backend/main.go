@@ -31,6 +31,7 @@ func main() {
 		&models.Problem{},
 		&models.Submission{},
 		&models.TestCase{},
+		&models.TestCaseResult{},
 	); err != nil {
 		log.Fatalf("数据库迁移失败: %v", err)
 	}
@@ -42,6 +43,12 @@ func main() {
 	if err := api.InitKafka(cfg); err != nil {
 		log.Printf("初始化Kafka失败: %v", err)
 		log.Printf("系统将在无Kafka模式下运行")
+	}
+
+	// 初始化判题结果消费者
+	if err := api.InitJudgeResultConsumer(db); err != nil {
+		log.Printf("初始化判题结果消费者失败: %v", err)
+		log.Printf("系统将在无判题结果消费模式下运行")
 	}
 
 	// 初始化路由

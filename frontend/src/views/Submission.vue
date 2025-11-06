@@ -39,7 +39,7 @@
             </div>
             
             <el-table v-else :data="submissions" border stripe style="width: 100%">
-              <el-table-column prop="id" label="ID" width="80" />
+              <el-table-column prop="id" label="id" width="80" />
               <el-table-column prop="problem.title" label="题目" min-width="200">
                 <template #default="scope">
                   <router-link :to="`/problem/${scope.row.problem_id}`" class="problem-link">
@@ -153,7 +153,7 @@ export default {
         const response = await submissionApi.getSubmissions(page, pageSize.value)
         if (response && response.submissions && Array.isArray(response.submissions)) {
           submissions.value = response.submissions.map(item => ({
-            id: item.ID,
+            id: item.id,
             problem_id: item.problem_id,
             language: item.language,
             status: item.status,
@@ -194,11 +194,11 @@ export default {
     const getStatusType = (status) => {
       const statusMap = {
         'Accepted': 'success',
-        'Wrong Answer': 'danger',
-        'Time Limit Exceeded': 'warning',
-        'Memory Limit Exceeded': 'warning',
-        'Runtime Error': 'danger',
-        'Compilation Error': 'info',
+        'WrongAnswer': 'danger',
+        'TimeLimitExceeded': 'warning',
+        'MemoryLimitExceeded': 'warning',
+        'RuntimeError': 'danger',
+        'CompileError': 'info',
         'Pending': 'info',
         'Judging': 'info'
       }
@@ -208,14 +208,14 @@ export default {
     // 获取状态文本
     const getStatusText = (status) => {
       const statusTextMap = {
-        'Accepted': '通过',
-        'Wrong Answer': '答案错误',
-        'Time Limit Exceeded': '超时',
-        'Memory Limit Exceeded': '内存超限',
-        'Runtime Error': '运行错误',
-        'Compilation Error': '编译错误',
-        'Pending': '等待中',
-        'Judging': '评测中'
+        'Accepted': 'Accepted',
+        'WrongAnswer': 'Wrong Answer',
+        'TimeLimitExceeded': 'Time Limit Exceeded',
+        'MemoryLimitExceeded': 'Memory Limit Exceeded',
+        'RuntimeError': 'Runtime Error',
+        'CompileError': 'Compile Error',
+        'pending': 'Pending',
+        'Judging': 'Judging'
       }
       return statusTextMap[status] || status
     }

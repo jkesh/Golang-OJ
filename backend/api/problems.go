@@ -32,6 +32,7 @@ func GetProblem(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "Failed to fetch problem",
 		})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"problem": problem,

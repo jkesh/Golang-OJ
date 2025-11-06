@@ -46,6 +46,10 @@ const problemsApi = {
   // 获取单个题目详情
   getProblem(id) {
     return apiClient.get(`/problems/${id}`).then(response => response.data)
+  },
+
+  submitCode(submissionData) {
+    return apiClient.post('/submit', submissionData).then(response => response.data)
   }
 }
 
