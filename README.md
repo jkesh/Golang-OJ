@@ -33,11 +33,27 @@ OJPlus 是一个现代化的在线评测系统，支持多语言代码提交、�
 - 可水平扩展的判题系统
 
 ## 技术栈
-- 后端：Go, Gin, GORM
+- 后端：Go, Gin, GORM, Viper
 - 前端：Vue.js, Vuetify
 - 数据库：PostgreSQL, Redis
 - 消息队列：Kafka
 - 容器化：Docker, Kubernetes
+
+## 配置管理
+本项目使用 [Viper](https://github.com/spf13/viper) 进行配置管理，支持多种配置格式（JSON, TOML, YAML, HCL等）。
+
+### 配置文件
+配置文件位于 `backend/config/config.json`，包含以下主要配置项：
+- 服务器配置 (端口、主机等)
+- 数据库配置 (主机、端口、用户名、密码等)
+- Redis配置 (主机、端口、密码等)
+- Kafka配置 (Brokers、主题等)
+- 判题配置 (超时时间、内存限制、支持的语言等)
+
+### 环境变量
+配置项也可以通过环境变量进行覆盖，例如：
+- `SERVER_PORT` 覆盖服务器端口
+- `DATABASE_HOST` 覆盖数据库主机地址
 
 ## 开发与部署
 

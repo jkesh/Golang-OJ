@@ -36,19 +36,19 @@
                 <el-col :span="8">
                   <el-card shadow="hover" class="dashboard-card">
                     <h3>题目总数</h3>
-                    <div class="dashboard-number">100</div>
+                    <div class="dashboard-number">{{ stats.total_problems }}</div>
                   </el-card>
                 </el-col>
                 <el-col :span="8">
                   <el-card shadow="hover" class="dashboard-card">
                     <h3>已解决题目</h3>
-                    <div class="dashboard-number">25</div>
+                    <div class="dashboard-number">{{ stats.solved_problems }}</div>
                   </el-card>
                 </el-col>
                 <el-col :span="8">
                   <el-card shadow="hover" class="dashboard-card">
                     <h3>提交次数</h3>
-                    <div class="dashboard-number">150</div>
+                    <div class="dashboard-number">{{ stats.total_submissions }}</div>
                   </el-card>
                 </el-col>
               </el-row>
@@ -56,15 +56,16 @@
               <el-divider></el-divider>
               
               <h3>最近活动</h3>
-              <el-timeline>
+              <el-timeline v-if="activities.length > 0">
                 <el-timeline-item
                   v-for="(activity, index) in activities"
                   :key="index"
-                  :timestamp="activity.timestamp"
-                  :type="activity.type">
-                  {{ activity.content }}
+                  :timestamp="formatDate(activity.submitted_at)"
+                  :type="getActivityType(activity.status)">
+                  {{ getActivityText(activity) }}
                 </el-timeline-item>
               </el-timeline>
+              <el-empty v-else description="暂无活动记录" />
             </div>
           </el-card>
         </el-main>
@@ -74,11 +75,12 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import Sidebar from "../../components/Sidebar.vue";
+import Sidebar from "../../components/Sidebar.vue"
+import dashboardApi from "../api/dashboard.js"
 
 export default {
   name: 'Dashboard',
@@ -91,23 +93,15 @@ export default {
       const user = store.getters.currentUser
       return user ? user.username : '用户'
     })
-    const activities = ref([
-      {
-        content: '成功解决题目 #42 "两数之和"',
-        timestamp: '2023-10-21 14:30',
-        type: 'success'
-      },
-      {
-        content: '提交了题目 #56 "合并区间"',
-        timestamp: '2023-10-21 11:20',
-        type: 'warning'
-      },
-      {
-        content: '首次登录系统',
-        timestamp: '2023-10-20 09:15',
-        type: 'primary'
-      }
-    ])
+    
+    const stats = ref({
+      total_problems: 0,
+      solved_problems: 0,
+      total_submissions: 0
+    })
+    
+    const activities = ref([])
+    
     const handleCommand = (command) => {
       if (command === 'logout') {
         ElMessageBox.confirm(
@@ -141,11 +135,85 @@ export default {
       router.push(index)
     }
     
+    // 获取统计数据
+    const fetchStats = async () => {
+      try {
+        const response = await dashboardApi.getDashboardStats()
+        if (response && response.stats) {
+          stats.value = response.stats
+        }
+      } catch (error) {
+        console.error('获取统计数据失败:', error)
+        ElMessage.error('获取统计数据失败: ' + (error.response?.data?.error || error.message))
+      }
+    }
+    
+    // 获取最近活动
+    const fetchActivities = async () => {
+      try {
+        const response = await dashboardApi.getRecentActivities()
+        if (response && response.activities) {
+          activities.value = response.activities
+        }
+      } catch (error) {
+        console.error('获取最近活动失败:', error)
+        ElMessage.error('获取最近活动失败: ' + (error.response?.data?.error || error.message))
+      }
+    }
+    
+    // 格式化日期
+    const formatDate = (dateString) => {
+      if (!dateString) return '-'
+      const date = new Date(dateString)
+      return date.toLocaleString('zh-CN')
+    }
+    
+    // 获取活动类型
+    const getActivityType = (status) => {
+      const typeMap = {
+        'accepted': 'success',
+        'wrong_answer': 'danger',
+        'time_limit_exceeded': 'warning',
+        'memory_limit_exceeded': 'warning',
+        'runtime_error': 'danger',
+        'compile_error': 'info',
+        'pending': 'info',
+        'judging': 'info'
+      }
+      return typeMap[status] || 'info'
+    }
+    
+    // 获取活动文本
+    const getActivityText = (activity) => {
+      const statusTextMap = {
+        'accepted': '通过',
+        'wrong_answer': '答案错误',
+        'time_limit_exceeded': '超时',
+        'memory_limit_exceeded': '内存超限',
+        'runtime_error': '运行错误',
+        'compile_error': '编译错误',
+        'pending': '等待中',
+        'judging': '评测中'
+      }
+      
+      const statusText = statusTextMap[activity.status] || activity.status
+      return `提交了题目 #${activity.problem_id} "${activity.problem_title}" - ${statusText}`
+    }
+    
+    onMounted(() => {
+      fetchStats()
+      fetchActivities()
+    })
+    
     return {
       username,
+      stats,
       activities,
       handleCommand,
-      onMenuSelect
+      onMenuSelect,
+      formatDate,
+      getActivityType,
+      getActivityText
     }
   }
 }

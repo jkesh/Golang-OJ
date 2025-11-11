@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// 加载配置
-	cfg, err := config.LoadConfig("./config/config.json")
+	cfg, err := config.LoadConfig("./config.json")
 	if err != nil {
 		log.Fatalf("加载配置失败: %v", err)
 	}
@@ -32,6 +32,7 @@ func main() {
 		&models.Submission{},
 		&models.TestCase{},
 		&models.TestCaseResult{},
+		&models.Judge{},
 	); err != nil {
 		log.Fatalf("数据库迁移失败: %v", err)
 	}

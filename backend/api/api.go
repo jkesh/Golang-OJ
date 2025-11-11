@@ -37,6 +37,10 @@ func RegisterRoutes(router *gin.Engine) {
 		authRequired.GET("/submissions/:id/result", GetSubmissionResult)
 		authRequired.GET("/:id/submit-state", GetUserSubmitState)
 
+		// 仪表板相关
+		authRequired.GET("/dashboard/stats", GetDashboardStats)
+		authRequired.GET("/dashboard/activities", GetRecentActivities)
+
 		// 管理员路由
 		adminRequired := authRequired.Group("/admin")
 		adminRequired.Use(middleware.AdminRequired())
