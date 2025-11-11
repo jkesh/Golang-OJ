@@ -1,7 +1,7 @@
 <template>
   <div class="submission-detail-container">
     <el-container>
-      <Sidebar />
+      <Sidebar @menu-selected="onMenuSelect" />
       
       <el-container>
         <el-header class="el-header">
@@ -171,6 +171,11 @@ export default {
       }
     }
     
+    const onMenuSelect = (index) => {
+      console.log(`Selected menu item with index: ${index}`)
+      router.push(index)
+    }
+    
     // 格式化日期
     const formatDate = (dateString) => {
       if (!dateString) return '-'
@@ -272,7 +277,8 @@ export default {
       getTestCaseStatusType,
       getStatusText,
       getTestCaseStatusText,
-      handleCommand
+      handleCommand,
+      onMenuSelect
     }
   }
 }

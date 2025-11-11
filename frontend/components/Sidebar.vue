@@ -1,71 +1,70 @@
-<!-- src/components/Sidebar.vue -->
 <template>
-  <el-aside class="el-aside">
+  <el-aside width="200px" class="sidebar">
     <el-menu
-        :default-active="activeIndex"
-        class="sidebar-menu"
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
-        router
-        @select="handleSelect">
-      <el-menu-item index="1" route="/dashboard">
-        <i class="el-icon-menu"></i>
+      :default-active="activeIndex"
+      class="el-menu-vertical"
+      @select="handleSelect"
+      :unique-opened="true"
+    >
+      <el-menu-item index="/dashboard">
+        <i class="el-icon-house"></i>
         <span>首页</span>
       </el-menu-item>
-      <el-menu-item index="2" route="/problems">
+      
+      <el-menu-item index="/problems">
         <i class="el-icon-document"></i>
         <span>题目列表</span>
       </el-menu-item>
-      <el-menu-item index="3" route="/submissions">
-        <i class="el-icon-s-order"></i>
+      
+      <el-menu-item index="/submissions">
+        <i class="el-icon-tickets"></i>
         <span>提交记录</span>
       </el-menu-item>
-      <el-menu-item index="4" route="/ranking">
-        <i class="el-icon-trophy"></i>
-        <span>排行榜</span>
+      
+      <el-menu-item index="/admin" v-if="isAdmin">
+        <i class="el-icon-setting"></i>
+        <span>管理系统</span>
       </el-menu-item>
     </el-menu>
   </el-aside>
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useStore } from 'vuex'
 import { useRoute } from 'vue-router'
 
 export default {
   name: 'Sidebar',
-  emits: ['menu-select'],
+  emits: ['menu-selected'],
   setup(props, { emit }) {
+    const store = useStore()
     const route = useRoute()
-
-    // 根据当前路由设置激活菜单项
-    const activeIndex = ref('')
-    const updateActiveIndex = () => {
-      switch(route.path) {
-        case '/dashboard': activeIndex.value = '1'; break
-        case '/problems': activeIndex.value = '2'; break
-        case '/submissions': activeIndex.value = '3'; break
-        case '/ranking': activeIndex.value = '4'; break
-        default: 
-          // 检查是否是题目详情页
-          if (route.path.startsWith('/problem/')) {
-            activeIndex.value = '2'
-          } else {
-            activeIndex.value = '1'
-          }
-      }
-    }
-
-    // 监听路由变化更新激活状态
-    updateActiveIndex()
-
+    
+    const activeIndex = ref(route.path)
+    
+    const isAdmin = computed(() => {
+      const user = store.getters.currentUser
+      return user && user.role === 'admin'
+    })
+    
     const handleSelect = (index) => {
-      emit('menu-select', index)
+      activeIndex.value = index
+      emit('menu-selected', index)
     }
-
+    
+    // 监听路由变化以更新激活状态
+    watch(() => route.path, (newPath) => {
+      activeIndex.value = newPath
+    })
+    
+    onMounted(() => {
+      activeIndex.value = route.path
+    })
+    
     return {
       activeIndex,
+      isAdmin,
       handleSelect
     }
   }
@@ -73,16 +72,18 @@ export default {
 </script>
 
 <style scoped>
-
-.el-aside {
-  background-color: #304156;
-  color: #bfcbd9;
-  width: 200px;
-  height: 100%;
-  min-height: 100vh;
+.sidebar {
+  background-color: #ffffff;
+  border-right: 1px solid #e6e6e6;
+  box-shadow: 2px 0 2px rgba(0, 0, 0, 0.1);
 }
-.sidebar-menu {
+
+.el-menu-vertical {
   height: 100%;
   border-right: none;
+}
+
+.el-menu-item i {
+  margin-right: 10px;
 }
 </style>

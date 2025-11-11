@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"backend/models"
 	"github.com/gin-gonic/gin"
@@ -41,8 +42,37 @@ func GetProblem(c *gin.Context) {
 
 // CreateProblem 创建新问题
 func CreateProblem(c *gin.Context) {
+	db := c.MustGet("db").(*gorm.DB)
+
+	var problem models.Problem
+	if err := c.ShouldBindJSON(&problem); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request data",
+		})
+		return
+	}
+
+	// 获取用户ID
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "User not authenticated",
+		})
+		return
+	}
+
+	problem.CreatedBy = userID.(uint)
+
+	if err := db.Create(&problem).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to create problem: " + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "创建新问题",
+		"message": "Problem created successfully",
+		"problem": problem,
 		"status":  "success",
 	})
 }
@@ -50,18 +80,80 @@ func CreateProblem(c *gin.Context) {
 // UpdateProblem 更新问题
 func UpdateProblem(c *gin.Context) {
 	id := c.Param("id")
+	db := c.MustGet("db").(*gorm.DB)
+
+	// 查找题目
+	var problem models.Problem
+	if err := db.First(&problem, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Problem not found",
+		})
+		return
+	}
+
+	// 绑定更新数据
+	var updateData models.Problem
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request data",
+		})
+		return
+	}
+
+	// 更新字段
+	problem.Title = updateData.Title
+	problem.Description = updateData.Description
+	problem.Difficulty = updateData.Difficulty
+	problem.TimeLimit = updateData.TimeLimit
+	problem.MemoryLimit = updateData.MemoryLimit
+	problem.Tags = updateData.Tags
+
+	// 保存更新
+	if err := db.Save(&problem).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to update problem: " + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "更新问题",
-		"id":      id,
+		"message": "Problem updated successfully",
+		"problem": problem,
 		"status":  "success",
 	})
 }
 
 // DeleteProblem 删除问题
 func DeleteProblem(c *gin.Context) {
-	id := c.Param("id")
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid problem ID",
+		})
+		return
+	}
+
+	db := c.MustGet("db").(*gorm.DB)
+
+	// 查找题目
+	var problem models.Problem
+	if err := db.First(&problem, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Problem not found",
+		})
+		return
+	}
+
+	// 删除题目
+	if err := db.Delete(&problem).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to delete problem: " + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "删除问题",
+		"message": "Problem deleted successfully",
 		"id":      id,
 		"status":  "success",
 	})

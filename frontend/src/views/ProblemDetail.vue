@@ -105,13 +105,12 @@
                   </el-option>
                 </el-select>
                 
-                <el-input
-                  type="textarea"
-                  :rows="15"
-                  placeholder="请输入代码"
-                  v-model="code"
-                  class="code-editor">
-                </el-input>
+                <MonacoEditor 
+                  v-model="code" 
+                  :language="getMonacoLanguage(selectedLanguage)" 
+                  height="400px"
+                  theme="vs"
+                />
                 
                 <div class="submit-button-container">
                   <el-button type="primary" @click="submitCode">提交代码</el-button>
@@ -132,10 +131,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Sidebar from "../../components/Sidebar.vue"
 import problemsApi from "../../src/api/problems.js"
+import MonacoEditor from "../components/MonacoEditor.vue"
 
 export default {
   name: 'ProblemDetail',
-  components: { Sidebar },
+  components: { Sidebar, MonacoEditor },
   setup() {
     const store = useStore()
     const route = useRoute()
@@ -225,6 +225,18 @@ export default {
       return textMap[difficulty] || difficulty
     }
     
+    // 将语言映射到 Monaco Editor 支持的语言
+    const getMonacoLanguage = (language) => {
+      const languageMap = {
+        'cpp': 'cpp',
+        'c': 'c',
+        'java': 'java',
+        'python': 'python',
+        'go': 'go'
+      }
+      return languageMap[language] || 'plaintext'
+    }
+    
     // 提交代码
     const submitCode = async () => {
       if (!code.value.trim()) {
@@ -281,6 +293,7 @@ export default {
     
     const onMenuSelect = (index) => {
       console.log(`Selected menu item with index: ${index}`)
+      router.push(index)
     }
     
     onMounted(() => {
@@ -296,6 +309,7 @@ export default {
       username,
       getDifficultyType,
       getDifficultyText,
+      getMonacoLanguage,
       submitCode,
       handleCommand,
       onMenuSelect
@@ -393,10 +407,6 @@ export default {
 
 .code-card {
   margin-bottom: 20px;
-}
-
-.code-editor {
-  font-family: 'Courier New', monospace;
 }
 
 .submit-button-container {

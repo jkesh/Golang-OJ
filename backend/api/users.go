@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"backend/models"
 	"github.com/gin-gonic/gin"
@@ -120,6 +121,31 @@ func GetUser(c *gin.Context) {
 func UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
 
+	// 检查是否尝试更新自己为普通用户
+	currentUserID, _ := c.Get("userID")
+	if currentUserID == userID {
+		// 获取当前用户的角色
+		currentRole, _ := c.Get("role")
+		if currentRole == "admin" {
+			var updateData struct {
+				Nickname string `json:"nickname"`
+				Email    string `json:"email"`
+				Role     string `json:"role"`
+			}
+
+			if err := c.ShouldBindJSON(&updateData); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "无效的请求参数"})
+				return
+			}
+
+			// 如果试图将自己降级为普通用户，拒绝操作
+			if updateData.Role != "" && updateData.Role != "admin" {
+				c.JSON(http.StatusForbidden, gin.H{"error": "不能将自己降级为普通用户"})
+				return
+			}
+		}
+	}
+
 	var updateData struct {
 		Nickname string `json:"nickname"`
 		Email    string `json:"email"`
@@ -179,10 +205,16 @@ func UpdateUser(c *gin.Context) {
 // DeleteUser 删除指定用户（管理员）
 func DeleteUser(c *gin.Context) {
 	userID := c.Param("id")
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的用户ID"})
+		return
+	}
 
 	// 不允许删除自己
 	currentUserID, _ := c.Get("userID")
-	if currentUserID == userID {
+	currentID, _ := strconv.Atoi(currentUserID.(string))
+	if currentID == id {
 		c.JSON(http.StatusForbidden, gin.H{"error": "不能删除当前登录的用户"})
 		return
 	}
@@ -197,6 +229,7 @@ func DeleteUser(c *gin.Context) {
 		"message": "用户删除成功",
 	})
 }
+
 func GetUserSubmitState(c *gin.Context) {
 	userID := c.Param("id")
 	db := c.MustGet("db").(*gorm.DB)

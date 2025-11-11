@@ -147,6 +147,7 @@ export default {
     
     const onMenuSelect = (index) => {
       console.log(`Selected menu item with index: ${index}`)
+      router.push(index)
     }
     
     // 获取题目列表

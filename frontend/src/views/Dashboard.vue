@@ -135,9 +135,10 @@ export default {
       }
     }
 
-    // 处理菜单选择事件(可选)
+    // 处理菜单选择事件
     const onMenuSelect = (index) => {
       console.log(`Selected menu item with index: ${index}`)
+      router.push(index)
     }
     
     return {

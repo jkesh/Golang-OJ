@@ -48,8 +48,24 @@ const problemsApi = {
     return apiClient.get(`/problems/${id}`).then(response => response.data)
   },
 
+  // 提交代码到指定接口
   submitCode(submissionData) {
     return apiClient.post('/submit', submissionData).then(response => response.data)
+  },
+  
+  // 创建题目
+  createProblem(problemData) {
+    return apiClient.post('/problems', problemData).then(response => response.data)
+  },
+  
+  // 更新题目
+  updateProblem(id, problemData) {
+    return apiClient.put(`/problems/${id}`, problemData).then(response => response.data)
+  },
+  
+  // 删除题目
+  deleteProblem(id) {
+    return apiClient.delete(`/problems/${id}`).then(response => response.data)
   }
 }
 

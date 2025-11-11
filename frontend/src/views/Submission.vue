@@ -43,7 +43,7 @@
               <el-table-column prop="problem.title" label="题目" min-width="200">
                 <template #default="scope">
                   <router-link :to="`/problem/${scope.row.problem_id}`" class="problem-link">
-                    {{ scope.row.problem ? scope.row.problem.title : `题目 #${scope.row.problem_id}` }}
+                    {{ scope.row.problem.title ? scope.row.problem.title : `题目 #${scope.row.problem_id}` }}
                   </router-link>
                 </template>
               </el-table-column>
@@ -146,11 +146,13 @@ export default {
     }
     const onMenuSelect = (index) => {
       console.log(`Selected menu item with index: ${index}`)
+      router.push(index)
     }
     const fetchSubmissions = async (page = 1) => {
       loading.value = true
       try {
         const response = await submissionApi.getSubmissions(page, pageSize.value)
+        console.log('获取提交记录成功:', response)
         if (response && response.submissions && Array.isArray(response.submissions)) {
           submissions.value = response.submissions.map(item => ({
             id: item.id,
@@ -161,7 +163,7 @@ export default {
             memory_cost: item.memory,
             created_at: item.submitted_at,
             problem: {
-              title: `题目 #${item.problem_id}`
+              title: item.title
             }
           }))
           total.value = response.total
