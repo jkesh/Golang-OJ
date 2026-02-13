@@ -212,9 +212,13 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	// 不允许删除自己
-	currentUserID, _ := c.Get("userID")
-	currentID, _ := strconv.Atoi(currentUserID.(string))
-	if currentID == id {
+	currentUserID, err := getCurrentUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户未认证"})
+		return
+	}
+
+	if int(currentUserID) == id {
 		c.JSON(http.StatusForbidden, gin.H{"error": "不能删除当前登录的用户"})
 		return
 	}

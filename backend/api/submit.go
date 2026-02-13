@@ -125,8 +125,8 @@ func SubmitHandler(c *gin.Context) {
 	}
 
 	// 从认证中间件中获取用户ID
-	userID, exists := c.Get("userID")
-	if !exists {
+	userID, err := getCurrentUserID(c)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "User not authenticated",
 		})
@@ -134,7 +134,7 @@ func SubmitHandler(c *gin.Context) {
 	}
 
 	// 设置提交的用户ID
-	submission.UserID = userID.(uint)
+	submission.UserID = userID
 
 	// 调用Submit函数处理提交
 	if err := Submit(db, &submission); err != nil {

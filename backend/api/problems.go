@@ -53,15 +53,15 @@ func CreateProblem(c *gin.Context) {
 	}
 
 	// 获取用户ID
-	userID, exists := c.Get("userID")
-	if !exists {
+	userID, err := getCurrentUserID(c)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "User not authenticated",
 		})
 		return
 	}
 
-	problem.CreatedBy = userID.(uint)
+	problem.CreatedBy = userID
 
 	if err := db.Create(&problem).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
